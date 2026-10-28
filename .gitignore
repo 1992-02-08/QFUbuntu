@@ -1,0 +1,4 @@
+rootfs.tar.gz
+*.ipa
+Payload/
+.DS_Store

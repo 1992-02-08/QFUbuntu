@@ -1,0 +1,29 @@
+name: Build QFUbuntu IPA
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build IPA
+        run: |
+          mkdir -p Payload/QFUbuntu.app
+          SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
+          clang -target arm64-apple-ios14.0 -isysroot "$SDK_PATH" \
+            -framework UIKit -framework Foundation \
+            QFUbuntu/main.m -o Payload/QFUbuntu.app/QFUbuntu
+          cp QFUbuntu/Info.plist Payload/QFUbuntu.app/Info.plist
+          if [ -f rootfs.tar.gz ]; then
+            cp rootfs.tar.gz Payload/QFUbuntu.app/rootfs.tar.gz
+          fi
+          brew install ldid 2>/dev/null || true
+          ldid -Sentitlements.plist Payload/QFUbuntu.app/QFUbuntu 2>/dev/null || true
+          zip -qry QFUbuntu.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: QFUbuntu-ipa
+          path: QFUbuntu.ipa
