@@ -5,25 +5,32 @@ jobs:
   build:
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Source
+        uses: actions/checkout@v4
 
-      - name: Build IPA
+      - name: Download Pre-built Ubuntu 24.04 ARM64 Base Rootfs
+        run: |
+          echo "=== 正在拉取官方 Ubuntu 24.04 arm64 base rootfs ==="
+          curl -L -o rootfs.tar.gz "http://cdimage.ubuntu.com/ubuntu-base/releases/24.04/release/ubuntu-base-24.04.5-base-arm64.tar.gz"
+          ls -lh rootfs.tar.gz
+
+      - name: Compile iOS Bootstrap & Assemble IPA
         run: |
           mkdir -p Payload/QFUbuntu.app
           SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
+          echo "Using SDK: $SDK_PATH"
           clang -target arm64-apple-ios14.0 -isysroot "$SDK_PATH" \
             -framework UIKit -framework Foundation \
             QFUbuntu/main.m -o Payload/QFUbuntu.app/QFUbuntu
           cp QFUbuntu/Info.plist Payload/QFUbuntu.app/Info.plist
-          if [ -f rootfs.tar.gz ]; then
-            cp rootfs.tar.gz Payload/QFUbuntu.app/rootfs.tar.gz
-          fi
+          cp rootfs.tar.gz Payload/QFUbuntu.app/rootfs.tar.gz
           brew install ldid 2>/dev/null || true
           ldid -Sentitlements.plist Payload/QFUbuntu.app/QFUbuntu 2>/dev/null || true
           zip -qry QFUbuntu.ipa Payload
+          ls -lh QFUbuntu.ipa
 
-      - name: Upload IPA
+      - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: QFUbuntu-ipa
+          name: QFUbuntu.ipa
           path: QFUbuntu.ipa
