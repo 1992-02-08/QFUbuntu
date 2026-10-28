@@ -20,7 +20,8 @@ jobs:
           SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
           echo "Using SDK: $SDK_PATH"
           clang -target arm64-apple-ios14.0 -isysroot "$SDK_PATH" \
-            -framework UIKit -framework Foundation \
+            -fobjc-arc -O2 \
+            -framework UIKit -framework Foundation -framework CoreGraphics \
             QFUbuntu/main.m -o Payload/QFUbuntu.app/QFUbuntu
           cp QFUbuntu/Info.plist Payload/QFUbuntu.app/Info.plist
           cp rootfs.tar.gz Payload/QFUbuntu.app/rootfs.tar.gz
